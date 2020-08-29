@@ -9,14 +9,6 @@ config :isolation_example, IsolationExample.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :isolation_example, IsolationExample.RepoTwo,
-  username: "postgres",
-  password: "postgres",
-  database: "isolation_example_dev",
-  hostname: "localhost",
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

@@ -8,7 +8,7 @@
 use Mix.Config
 
 config :isolation_example,
-  ecto_repos: [IsolationExample.Repo, IsolationExample.RepoTwo]
+  ecto_repos: [IsolationExample.Repo]
 
 # Configures the endpoint
 config :isolation_example, IsolationExampleWeb.Endpoint,
