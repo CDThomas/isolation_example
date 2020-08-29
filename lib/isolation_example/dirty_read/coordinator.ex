@@ -1,17 +1,18 @@
 defmodule IsolationExample.DirtyRead.Coordinator do
-  def race(mod) do
-    select_transaction = start_select_transaction(mod, :select_transaction)
-    update_transaction = start_update_transaction(mod, :update_transaction)
+  alias IsolationExample.DirtyRead.SelectTransaction
+  alias IsolationExample.DirtyRead.UpdateTransaction
 
-    :ok = sync(select_transaction, :select_one)
-    :ok = sync(update_transaction, :update_one)
+  def race do
+    select_pid = start_transaction(SelectTransaction)
+    update_pid = start_transaction(UpdateTransaction)
 
-    :ok = sync(update_transaction, :update_two)
-    # We don't want to block here in case the transaction crashes
-    send(select_transaction, :select_two)
+    :ok = sync(select_pid, :select_one)
+    :ok = sync(update_pid, :update_one)
+    :ok = sync(update_pid, :update_two)
+    :ok = sync(select_pid, :select_two)
 
-    :ok = sync(select_transaction, :commit)
-    send(update_transaction, :commit)
+    :ok = sync(select_pid, :commit)
+    :ok = sync(update_pid, :commit)
   end
 
   def sync(pid, msg) do
@@ -23,19 +24,11 @@ defmodule IsolationExample.DirtyRead.Coordinator do
     end
   end
 
-  def start_select_transaction(mod, name) do
+  def start_transaction(mod) do
     pid = self()
 
     spawn(fn ->
-      mod.transaction(fn -> mod.run_selects(pid, name) end)
-    end)
-  end
-
-  def start_update_transaction(mod, name) do
-    pid = self()
-
-    spawn(fn ->
-      mod.transaction(fn -> mod.run_updates(pid, name) end)
+      mod.transaction(fn -> mod.run(pid) end)
     end)
   end
 end

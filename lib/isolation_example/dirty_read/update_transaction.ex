@@ -1,4 +1,4 @@
-defmodule IsolationExample.DirtyRead.Runner do
+defmodule IsolationExample.DirtyRead.UpdateTransaction do
   alias IsolationExample.Account
   alias IsolationExample.Repo
 
@@ -8,32 +8,7 @@ defmodule IsolationExample.DirtyRead.Runner do
     Repo.transaction(f)
   end
 
-  def run_selects(parent, _name) do
-    receive do
-      :select_one ->
-        :ok
-    end
-
-    select_one()
-    send(parent, {self(), :done})
-
-    receive do
-      :select_two ->
-        :ok
-    end
-
-    select_two()
-    send(parent, {self(), :done})
-
-    receive do
-      :commit ->
-        :ok
-    end
-
-    send(parent, {self(), :done})
-  end
-
-  def run_updates(parent, _name) do
+  def run(parent) do
     receive do
       :update_one ->
         :ok
@@ -55,22 +30,13 @@ defmodule IsolationExample.DirtyRead.Runner do
         :ok
     end
 
-    send(parent, {self(), :done})
-  end
-
-  defp select_one do
-    Repo.one(from a in Account, select: a.balance, where: a.id == 1)
-    |> IO.inspect(label: "SELECT_ONE:\n")
-  end
-
-  defp select_two do
-    Repo.one(from a in Account, select: a.balance, where: a.id == 2)
-    |> IO.inspect(label: "SELECT_TWO:\n")
+    send(parent, {self(), :done, nil})
   end
 
   defp update_one do
     query =
       from a in Account,
+        select: a.balance,
         update: [set: [balance: a.balance + 100]],
         where: a.id == 1
 
@@ -81,6 +47,7 @@ defmodule IsolationExample.DirtyRead.Runner do
   defp update_two do
     query =
       from a in Account,
+        select: a.balance,
         update: [set: [balance: a.balance - 100]],
         where: a.id == 2
 
