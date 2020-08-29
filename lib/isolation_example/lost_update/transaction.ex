@@ -1,23 +1,23 @@
 defmodule IsolationExample.LostUpdate.Transaction do
   alias IsolationExample.PromoCode
-  alias IsolationExample.Repo
 
   import Ecto.Query, only: [from: 2]
 
-  def transaction(f) do
-    Repo.transaction(fn ->
-      Repo.query!("set transaction isolation level repeatable read;")
+  def transaction(f, repo) do
+    repo.transaction(fn ->
+      Process.get_keys() |> IO.inspect(label: "Keys:\n")
+      # repo.query!("set transaction isolation level repeatable read;")
       f.()
     end)
   end
 
-  def run(parent) do
+  def run(parent, repo) do
     receive do
       :select ->
         :ok
     end
 
-    select()
+    select(repo)
     send(parent, {self(), :done})
 
     receive do
@@ -25,7 +25,7 @@ defmodule IsolationExample.LostUpdate.Transaction do
         :ok
     end
 
-    update()
+    update(repo)
     send(parent, {self(), :done})
 
     receive do
@@ -37,20 +37,23 @@ defmodule IsolationExample.LostUpdate.Transaction do
     send(parent, {self(), :done})
   end
 
-  defp select do
-    result = Repo.one(from pc in PromoCode, select: pc.code, where: pc.code == "moo")
+  defp select(repo) do
+    Process.get_keys() |> IO.inspect(label: "Keys:\n")
+    result = repo.one(from pc in PromoCode, select: pc.code, where: pc.code == "moo")
 
     IO.inspect({self(), result}, label: "Select:\n")
   end
 
-  defp update do
+  defp update(repo) do
+    Process.get_keys() |> IO.inspect(label: "Keys:\n")
+
     query =
       from pc in PromoCode,
         select: pc.is_used,
         update: [set: [is_used: true]],
         where: pc.code == "moo"
 
-    result = Repo.update_all(query, [])
+    result = repo.update_all(query, [])
 
     IO.inspect({self(), result}, label: "Update:\n")
   end

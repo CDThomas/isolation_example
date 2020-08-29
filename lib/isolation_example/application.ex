@@ -9,6 +9,7 @@ defmodule IsolationExample.Application do
     children = [
       # Start the Ecto repository
       IsolationExample.Repo,
+      IsolationExample.RepoTwo,
       # Start the Telemetry supervisor
       IsolationExampleWeb.Telemetry,
       # Start the PubSub system
