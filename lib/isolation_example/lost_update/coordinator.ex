@@ -2,8 +2,8 @@ defmodule IsolationExample.LostUpdate.Coordinator do
   alias IsolationExample.LostUpdate.Transaction
 
   def race do
-    pid_one = start_transaction(Transaction) |> IO.inspect(label: "pid_one:\n")
-    pid_two = start_transaction(Transaction) |> IO.inspect(label: "pid_two:\n")
+    pid_one = start_transaction(Transaction)
+    pid_two = start_transaction(Transaction)
 
     :ok = sync(pid_one, :select)
     :ok = sync(pid_two, :select)
